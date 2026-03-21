@@ -1,0 +1,35 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+
+# Coverage files
+coverage.out
+*.coverprofile
+
+# Workspace files (optional, remove if your team tracks these)
+go.work
+go.work.sum
+
+# Environment and logs
+.env
+.env.*
+*.log
+
+# IDE/editor files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# OS files
+.DS_Store
+Thumbs.db
