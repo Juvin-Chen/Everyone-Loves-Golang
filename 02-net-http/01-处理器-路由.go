@@ -32,7 +32,7 @@ import (
 2. 默认路由器 http.DefaultServeMux 的本质
 3. http.HandleFunc 是默认路由器的快捷写法
 */
-func main1() {
+func testHttpServer() {
 	// 1. 注册路由处理器：访问根路径 "/" 时执行匿名函数
 	// http.HandleFunc 本质 = http.DefaultServeMux.HandleFunc（默认路由器的快捷写法）
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

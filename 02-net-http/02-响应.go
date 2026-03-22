@@ -36,6 +36,32 @@ Set-Cookie			让浏览器保存 				Cookie	Set-Cookie: sessionId=abc123
 三、在 Go 中如何操作响应头？
 在 net/http 包中，处理函数接收的 http.ResponseWriter 参数（我们习惯命名为 w）提供了设置响应头的方法。
 
+ResponseWriter 是 Go 为 HTTP 服务端定义的 “响应写入器” 接口，而非具体的结构体。
+标准库的设计思路是：暴露接口给开发者使用，内部用不同结构体实现该接口，适配不同场景（比如普通响应、分块响应、缓冲响应）。
+
+ResponseWriter 接口的官方定义（简化版）:
+
+package http
+
+// ResponseWriter 是服务器向 HTTP 响应写入数据的核心接口
+type ResponseWriter interface {
+    // 核心：Write 方法，必须实现（满足 io.Writer 接口）
+    Write([]byte) (int, error)
+
+    // 发送 HTTP 状态码（如 404、500），可省略（默认 200 OK）
+    WriteHeader(int)
+
+    // 获取/设置响应头（比如 Content-Type、Set-Cookie）
+    Header() Header
+}
+
+1. w/r 参数来源：handler 函数 `func(w http.ResponseWriter, r *http.Request)` 中的 w/r 并非手动创建，而是 `net/http` 库作为回调参数自动传入：
+   - r：库解析 TCP 连接中的 HTTP 报文，生成 `http.Request` 实例；
+   - w：库基于 TCP 连接创建 `defaultResponseWriter`（`ResponseWriter` 接口的默认实现），以接口形式传入。
+2. defaultResponseWriter 角色：日常开发中 handler 拿到的 w，底层默认是该私有结构体，实现了 `ResponseWriter` 接口的 `Write/WriteHeader/Header` 方法，负责实际向客户端写入响应、管理状态码/响应头。
+3. 核心逻辑：开发者只需定义 handler 处理逻辑，`net/http` 库负责：监听连接 → 创建 w/r → 调用 handler 并传参 → 最终通过 w 的底层实现完成响应发送。
+
+
 3.1 w.Header() 返回一个 http.Header 对象
 	http.Header 其实是一个 map[string][]string，用来存储所有的响应头。
 	你可以通过 w.Header().Set(key, value) 来设置一个键值对。
@@ -83,7 +109,7 @@ import (
 	"net/http"
 )
 
-func main2() {
+func testResponseWriter() {
 	/*
 		源码解析：
 		// net/http 包中 Header 的核心定义
@@ -121,3 +147,13 @@ func main2() {
 		log.Fatalf("启动失败: %v", err)
 	}
 }
+
+/*
+总结:
+	HTTP 响应由 状态行、响应头、响应体 三部分组成。
+		1.响应头是键值对，告诉浏览器如何解析和处理响应体。
+		2.在 Go 中，通过 w.Header().Set(key, value) 设置响应头。
+		3.通过 w.WriteHeader(code) 设置状态码（必须在写入响应体之前调用）。
+		4.用 fmt.Fprintf(w, ...) 或 w.Write([]byte(...)) 写入响应体。
+		5.用浏览器开发者工具或 curl 可以查看响应头，验证你的设置。
+*/
