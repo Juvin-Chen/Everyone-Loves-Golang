@@ -79,6 +79,7 @@ type ResponseWriter interface {
 
 3.2 设置状态码：w.WriteHeader(statusCode)
 状态码是三位数字，表示请求的处理结果。
+状态码可以直接用数字表示但是不推荐，推荐下面的状态码常量，可读性更高。
 常见的状态码有：
 	200 OK：成功
 	301 Moved Permanently：永久重定向
@@ -86,6 +87,13 @@ type ResponseWriter interface {
 	400 Bad Request：客户端请求有误
 	404 Not Found：资源不存在
 	500 Internal Server Error：服务器内部错误
+常用的状态码常量（完整列表在net/http/status.go里）
+	http.StatusOK           // 200：成功
+	http.StatusBadRequest   // 400：请求参数错误
+	http.StatusUnauthorized // 401：未授权（你问的这个）
+	http.StatusForbidden    // 403：禁止访问
+	http.StatusNotFound     // 404：资源不存在
+	http.StatusInternalServerError // 500：服务器内部错误
 
 在 Go 中，我们可以用 w.WriteHeader(200) 来发送状态码。
 重要：必须在写入响应体之前调用 WriteHeader，因为状态行和响应头是在响应体之前发送的。
