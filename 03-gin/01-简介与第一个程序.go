@@ -62,5 +62,65 @@ func test1_ReturnJson() {
 	})
 
 	// 启动服务器，默认监听 8080 端口
+	/*
+		启动 HTTP 服务器，默认监听 0.0.0.0:8080。
+		你也可以传入地址参数，比如 r.Run(":9090") 监听 9090 端口。
+		Run 方法会阻塞，直到服务器关闭。
+	*/
 	r.Run()
+}
+
+/*
+如果用 net/http 实现同样的功能，代码会是这样的：
+import (
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        json.NewEncoder(w).Encode(map[string]string{"message": "pong"})
+    })
+    http.ListenAndServe(":8080", nil)
+}
+
+Gin 的优势很明显：
+	不需要手动设置 Content-Type。
+	不需要手动编码 JSON。
+	路由注册更简洁，支持多种 HTTP 方法（GET、POST、PUT、DELETE 等）。
+	处理函数中直接使用 c 对象，提供了丰富的辅助方法。
+*/
+
+// Gin 也支持返回纯文本和 HTML
+func test1_More() {
+	r := gin.Default()
+	// 返回纯文本
+	r.GET("/text", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "Hello World!")
+	})
+	// 返回HTML
+	// 注意：使用 c.HTML 之前需要配置模板目录
+	r.GET("/html", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "index.html", gin.H{
+			"title": "Gin示例",
+		})
+	})
+}
+
+// 关于路由匹配
+// Gin 的路由支持动态参数、通配符等，例如：
+func test1_Path() {
+	r := gin.Default()
+	// 路径参数 :name
+	r.GET("/user/name", func(ctx *gin.Context) {
+		name := ctx.Param("name")
+		ctx.String(http.StatusOK, "Hello %s", name)
+	})
+	// 查询参数
+	r.GET("/search", func(ctx *gin.Context) {
+		query := ctx.DefaultQuery("q", "default")
+		ctx.String(http.StatusOK, "Search: %s", query)
+	})
 }

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>用户列表</title>
+</head>
+
+<body>
+    <h1>用户列表</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>年龄</th>
+        </tr>
+        {{range .Users}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{.Name}}</td>
+            <td>{{.Age}}</td>
+        </tr>
+        {{else}}
+        <tr>
+            <td colspan="3">暂无用户</td>
+        </tr>
+        {{end}}
+    </table>
+</body>
+
+</html>
