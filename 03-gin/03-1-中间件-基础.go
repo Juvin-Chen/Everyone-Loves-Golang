@@ -90,7 +90,7 @@ func RecoveryMiddleware(c *gin.Context) {
 		if err := recover(); err != nil {
 			log.Printf("Panic: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-			c.Abort()
+			c.Abort() // 与next()相反，起到了一个终止的作用
 		}
 	}()
 	c.Next()
@@ -113,3 +113,106 @@ func UserHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
+
+// 5. 中间件执行顺序
+/*
+Gin 中间件的执行顺序遵循“洋葱模型”：
+	按 Use 注册的顺序依次执行每个中间件的前置代码。
+	遇到 c.Next() 时，进入下一个中间件或处理器。
+	所有中间件和处理器执行完毕后，再按相反顺序执行每个中间件的后置代码。
+*/
+func A(c *gin.Context) { println("A pre"); c.Next(); println("A post") }
+func B(c *gin.Context) { println("B pre"); c.Next(); println("B post") }
+func C(c *gin.Context) { println("C pre"); c.Next(); println("C post") }
+
+func testShunxu() {
+	r := gin.New()
+	r.Use(A, B, C)
+	r.GET("/", func(ctx *gin.Context) {
+		println("handler")
+	})
+}
+
+// 访问"/"输出
+/*
+A pre
+B pre
+C pre
+handler
+C post
+B post
+A post
+*/
+
+// 6.常用内置中间件
+/*
+	gin.Logger()：记录请求日志，可自定义输出格式。
+	gin.Recovery()：捕获 panic 并返回 500，防止程序崩溃。
+	这些在 gin.Default() 中已自动使用。
+*/
+
+// 实战：在留言板项目中应用 Gin 中间件
+// 自定义日志中间件
+func loggerMidd(c *gin.Context) {
+	start := time.Now()
+	c.Next()
+	log.Printf("%s %s %v", c.Request.Method, c.Request.URL.Path, time.Since(start))
+}
+
+// 认证中间件（仅示例，实际应从 header 或 cookie 验证）
+func authMidd(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if token != "valid-token" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	c.Set("user_id", 1)
+	c.Next()
+}
+
+func test3_zonghe() {
+	r := gin.Default() // 自带 Logger 和 Recovery，但我们也可以覆盖
+	// 如果希望完全自定义，用 gin.New()
+	// r := gin.New()
+	// r.Use(LoggerMiddleware, RecoveryMiddleware)
+
+	// 全局中间件
+	/*
+		这边 Use 的作用是追加，不是替换
+		最终中间件链是：
+			1. 内置 Logger
+			2. 内置 Recovery
+			3. 你的自定义 LoggerMiddleware （上面的loggerMidd）
+		全部都会执行！
+		一个都不会少！
+	*/
+	r.Use(LoggerMiddleware)
+
+	// 公开路由
+	r.GET("/ping", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"message": "pong"})
+	})
+
+	// 需要认证的路由
+	auth := r.Group("/api")
+	auth.Use(authMidd)
+	{
+		auth.GET("/user", func(ctx *gin.Context) {
+			userID, _ := ctx.Get("user_id")
+			ctx.JSON(200, gin.H{"user_id": userID})
+		})
+	}
+	r.Run()
+}
+
+/*
+对比 net/http 中间件
+特性		net/http				Gin
+注册		手动嵌套 A(B(handler))	 r.Use(A, B) 或路由组 Use
+控制流程	显式调用 next.ServeHTTP	 c.Next() 继续，c.Abort() 终止
+数据传递	context.WithValue		 c.Set / c.Get
+内置中间件	无，需自己实现			  内置日志、恢复，且易于集成第三方
+
+Gin 的中间件更符合直觉，尤其适合需要大量通用逻辑的场景。
+*/

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>留言板</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>留言板</h1>
+        <a href="/new" class="btn">发布新留言</a>
+        <div class="messages">
+            {{range .Messages}}
+            <div class="message">
+                <div class="meta">
+                    <strong>{{.Nickname}}</strong>
+                    <span class="time">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                </div>
+                <div class="content">{{.Content}}</div>
+                <form action="/delete" method="POST" class="delete-form">
+                    <input type="hidden" name="id" value="{{.ID}}">
+                    <button type="submit" class="btn btn-danger">删除</button>
+                </form>
+            </div>
+            {{else}}
+            <p>暂无留言，快来发布第一条吧！</p>
+            {{end}}
+        </div>
+    </div>
+</body>
+
+</html>
