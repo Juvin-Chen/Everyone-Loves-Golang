@@ -1,4 +1,4 @@
-## go backend study
+# go backend study
 ### 阶段一：语法基础与核心特性 
 
 **目标：** 能够熟练使用 Go 写出规范的代码，理解 Go 与 C++ / Java 的不同。
